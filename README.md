@@ -1,1 +1,2 @@
 # Gas
+Hi, it's Emon 2358. We've developed a simple, flexible, lightweight, fast, and scalable framework for Cloudflare Workers only. We named this framework Gas in the sense that it supports flare. This framework is different from regular frameworks, and the code is open to the public, so you can modify it to your liking! In other words, the framework has endless possibilities. Let's try this framework for yourself!
