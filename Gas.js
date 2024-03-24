@@ -38,6 +38,10 @@ class WebFramework {
     this.router.addRoute('GET', path, handler);
   }
 
+  post(path, handler) {
+    this.router.addRoute('POST', path, handler);
+  }
+
   use(middleware) {
     this.middlewares.push(middleware);
   }
@@ -58,3 +62,4 @@ const framework = new WebFramework();
 framework.get('/', async (request) => new Response('Hello from Cloudflare Workers!', { headers: { 'Content-Type': 'text/plain' } }));
 
 addEventListener('fetch', event => event.respondWith(framework.fetch(event)));
+
