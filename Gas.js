@@ -3,63 +3,78 @@ class Router {
     this.routes = new Map();
   }
 
+  // ルートの追加
   addRoute(method, path, handler) {
-    const routes = this.routes.get(method) || new Map();
-    routes.set(path, handler);
-    this.routes.set(method, routes);
+    const routeKey = `${method}:${path}`;
+    this.routes.set(routeKey, handler);
   }
 
+  // GETリクエストのハンドラーの追加
+  get(path, handler) {
+    this.addRoute('GET', path, handler);
+  }
+
+  // POSTリクエストのハンドラーの追加
+  post(path, handler) {
+    this.addRoute('POST', path, handler);
+  }
+
+  // ルーティング処理
   async route(request) {
-    const { method, url } = request;
-    const routes = this.routes.get(method);
+    const url = new URL(request.url);
+    const routeKey = `${request.method}:${url.pathname}`;
+    const handler = this.routes.get(routeKey);
 
-    if (!routes) {
-      return new Response('404 Not Found', { status: 404 });
+    if (handler) {
+      return await handler(request);
+    } else {
+      return new Response('404 Not Found', {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain' },
+      });
     }
-
-    const pathname = new URL(url).pathname;
-    const handler = routes.get(pathname);
-
-    if (!handler) {
-      return new Response('404 Not Found', { status: 404 });
-    }
-
-    return await handler(request);
   }
 }
 
 class WebFramework {
   constructor() {
     this.router = new Router();
-    this.middlewares = [];
   }
 
+  // ルートの追加
+  addRoute(method, path, handler) {
+    this.router.addRoute(method, path, handler);
+  }
+
+  // GETリクエストのハンドラーの追加
   get(path, handler) {
-    this.router.addRoute('GET', path, handler);
+    this.router.get(path, handler);
   }
 
+  // POSTリクエストのハンドラーの追加
   post(path, handler) {
-    this.router.addRoute('POST', path, handler);
+    this.router.post(path, handler);
   }
 
-  use(middleware) {
-    this.middlewares.push(middleware);
-  }
-
+  // Cloudflare Workersのfetchイベントハンドラー
   async fetch(event) {
-    let request = event.request;
-    
-    for (const middleware of this.middlewares) {
-      request = await middleware(request);
-    }
-
-    return await this.router.route(request);
+    const request = event.request;
+    const response = await this.router.route(request);
+    return response;
   }
 }
 
 const framework = new WebFramework();
 
-framework.get('/', async (request) => new Response('Hello from Cloudflare Workers!', { headers: { 'Content-Type': 'text/plain' } }));
+// ルートの設定
+framework.get('/', async (request) => {
+  return new Response('Hello from Cloudflare Workers!', {
+    headers: { 'Content-Type': 'text/plain' },
+  });
+});
 
-addEventListener('fetch', event => event.respondWith(framework.fetch(event)));
+// Cloudflare Workersのfetchイベントにハンドラーを追加
+addEventListener('fetch', event => {
+  event.respondWith(framework.fetch(event));
+});
 
